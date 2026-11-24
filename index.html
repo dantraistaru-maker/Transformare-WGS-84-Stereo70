@@ -37,7 +37,31 @@ h2 { font-size: 1.125rem; font-weight: 800; margin: 0; line-height: 1.3 }
 p { margin: 0 }
 .lead { color: var(--muted); max-width: 60ch; margin-top: 6px }
 .pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start }
-@media (min-width: 760px) { .pair { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+/* row = vedere (două coloane), big = portret pe tabletă (o coloană, text mare), tight = vedere pe ecran îngust */
+main.row .pair { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+main.big { max-width: 660px; gap: 26px }
+main.big h1 { font-size: 2.25rem }
+main.big h2 { font-size: 1.375rem }
+main.big .lead { font-size: 1.125rem }
+main.big .field { padding: 22px; gap: 16px }
+main.big .pair .order { height: 52px }
+main.big .pair .order label, main.big button { font-size: 1.125rem }
+main.big button { min-height: 54px }
+main.big .chip { font-size: .9375rem }
+main.big textarea { font-size: 23px; padding: 12px 14px }
+main.big .points span, main.big .points a { font-size: 1.0625rem }
+main.big footer { font-size: 1rem }
+main.tight .pair { gap: 10px }
+main.tight .field { padding: 12px }
+main.tight textarea { font-size: 13.5px }
+header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px 24px }
+header > div:first-child { flex: 1 1 300px; min-width: 0 }
+.screen { --c: var(--ink); flex: 0 1 300px }
+main.big header > .screen, main.big header > div:first-child { flex: 1 1 100% }
+main.tight h2 { font-size: 1rem }
+main.tight .top { gap: 4px }
+main.tight .chip { padding: 2px 7px; font-size: .75rem }
+@media (max-width: 599px) { header > .order.screen { display: none } }
 .field { --c: var(--geo); min-width: 0; background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px }
 .field.ste { --c: var(--ste) }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap }
@@ -71,8 +95,15 @@ footer { color: var(--muted); font-size: .875rem; max-width: 70ch; display: grid
 <body>
 <main>
   <header>
-    <h1>Convertor Stereo 70</h1>
-    <p class="lead">Scrie în oricare câmp și celălalt se calculează imediat. Pune câte un punct pe linie. La Google Maps merg grade zecimale, grade-minute-secunde și linkuri lungi.</p>
+    <div>
+      <h1>Convertor Stereo 70</h1>
+      <p class="lead">Scrie în oricare câmp și celălalt se calculează imediat. Pune câte un punct pe linie. La Google Maps merg grade zecimale, grade-minute-secunde și linkuri lungi.</p>
+    </div>
+    <div class="order screen" role="radiogroup" aria-label="Tipul de ecran">
+      <label><input type="radio" name="screen" id="screen-auto" value="auto" checked>Automat</label>
+      <label><input type="radio" name="screen" id="screen-portret" value="portret">Portret</label>
+      <label><input type="radio" name="screen" id="screen-vedere" value="vedere">Vedere</label>
+    </div>
   </header>
   <div class="pair">
     <section class="field geo">
@@ -262,6 +293,20 @@ var Core = (function () {
     if (src === 'geo') el.geo.value = el.geo.value.split(/\r?\n/).map(function (l) { var r = l.trim() ? readGeo(l) : null; return r && !r.err ? show(r.lat, r.lon) : l }).join('\n');
     run() }
   $('fmt-dec').addEventListener('change', refmt); $('fmt-dms').addEventListener('change', refmt);
+  // Tipul de ecran. Orientarea se ia de la dispozitiv, fiindcă tastatura deschisă micșorează fereastra.
+  var modes = ['auto', 'portret', 'vedere'], main = document.querySelector('main');
+  function portrait() { try { if (screen.orientation && screen.orientation.type) return /^portrait/.test(screen.orientation.type) } catch (x) {}
+    return matchMedia('(orientation: portrait)').matches }
+  function layout() {
+    var w = document.documentElement.clientWidth, m = modes.filter(function (x) { return $('screen-' + x).checked })[0] || 'auto';
+    var row = w >= 600 && (m === 'vedere' || (m === 'auto' && w >= 760 && !portrait()));
+    main.classList.toggle('row', row); main.classList.toggle('tight', row && w < 720);
+    main.classList.toggle('big', !row && w >= 600 && (m === 'portret' || portrait())) }
+  modes.forEach(function (x) { $('screen-' + x).addEventListener('change', function () { layout(); try { localStorage.setItem('stereo70-ecran', x) } catch (y) {} }) });
+  try { var sm = localStorage.getItem('stereo70-ecran'); if (modes.indexOf(sm) > 0) $('screen-' + sm).checked = true } catch (x) {}
+  addEventListener('resize', layout);
+  try { screen.orientation.addEventListener('change', layout) } catch (x) {}
+  layout();
   var saved = null; try { saved = JSON.parse(localStorage.getItem(KEY)) } catch (x) {}
   if (saved && saved.text && el[saved.src]) { src = saved.src; el[src].value = saved.text; $(saved.order === 'en' ? 'order-en' : 'order-ne').checked = true; $(saved.fmt === 'dms' ? 'fmt-dms' : 'fmt-dec').checked = true }
   else { example = true; el.geo.value = '44.441300, 26.097300\n45.657500, 25.601000' }
