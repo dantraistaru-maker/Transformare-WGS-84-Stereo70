@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Convertor Stereo 70</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=Overpass+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: două fișe de coordonate (albastru = Google Maps, brun = Stereo 70), una sub alta pe telefon, alăturate pe ecran lat; rezultate pe puncte dedesubt. */
+:root {
+  --bg: #e9eff0; --sheet: #fbfdfd; --ink: #13272d; --muted: #52686f; --line: #c3d0d3;
+  --geo: #1c5fa8; --ste: #8a4b10; --bad: #a8201a; --on: #ffffff;
+  --sans: "Overpass", "Segoe UI", system-ui, sans-serif;
+  --mono: "Overpass Mono", "SF Mono", Consolas, "Roboto Mono", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1b1f; --sheet: #17272c; --ink: #e3edee; --muted: #9ab0b5; --line: #33484f;
+  --geo: #82b8f2; --ste: #e0a468; --bad: #ff9a8f; --on: #0f1b1f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1b1f; --sheet: #17272c; --ink: #e3edee; --muted: #9ab0b5; --line: #33484f;
+  --geo: #82b8f2; --ste: #e0a468; --bad: #ff9a8f; --on: #0f1b1f; color-scheme: dark }
+[hidden] { display: none !important }
+body { margin: 0 }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--sans); padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-text-size-adjust: 100% }
+main { max-width: 920px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px }
+h1 { font-size: 1.75rem; line-height: 1.15; font-weight: 800; margin: 0; text-wrap: balance }
+h2 { font-size: 1.125rem; font-weight: 800; margin: 0; line-height: 1.3 }
+p { margin: 0 }
+.lead { color: var(--muted); max-width: 60ch; margin-top: 6px }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start }
+@media (min-width: 760px) { .pair { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+.field { --c: var(--geo); min-width: 0; background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px }
+.field.ste { --c: var(--ste) }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+.top h2 { color: var(--c) }
+.chip { font-size: .8125rem; font-weight: 600; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--c); color: var(--c) }
+.chip.in { background: var(--c); color: var(--on) }
+textarea { width: 100%; min-height: 92px; resize: vertical; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink);
+  font: 600 16px/1.7 var(--mono); letter-spacing: -.02em; font-variant-numeric: tabular-nums; padding: 10px; white-space: pre; overflow-x: auto }
+.order { height: 44px; border: 1px solid var(--line); border-radius: 4px; display: flex; overflow: hidden }
+.order label { flex: 1; position: relative; display: grid; place-items: center; cursor: pointer; font-weight: 600; font-size: .9375rem }
+.order label + label { border-left: 1px solid var(--line) }
+.order input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer }
+.order label:has(input:checked) { background: var(--c); color: var(--on) }
+.order label:has(input:focus-visible) { outline: 3px solid var(--ink); outline-offset: -5px }
+button { font: 600 1rem var(--sans); min-height: 46px; padding: 0 18px; border-radius: 4px; cursor: pointer; border: 1px solid var(--c, var(--ink)); background: transparent; color: var(--c, var(--ink)) }
+button.main { background: var(--c); color: var(--on); flex: 1 }
+button:active { transform: translateY(1px) }
+textarea:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid var(--c, var(--geo)); outline-offset: 2px }
+.acts { display: flex; gap: 10px }
+.msg { color: var(--bad); font-size: .9375rem; font-weight: 600; white-space: pre-line; overflow-wrap: anywhere }
+.msg:empty { display: none }
+.points { display: grid; gap: 8px }
+.points ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line) }
+.points li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 20px; align-items: center; border-bottom: 1px solid var(--line); padding: 4px 0 }
+.points span { font-family: var(--mono); font-size: .9375rem; font-variant-numeric: tabular-nums }
+.points a { color: var(--geo); font-weight: 600; min-height: 44px; display: inline-flex; align-items: center }
+footer { color: var(--muted); font-size: .875rem; max-width: 70ch; display: grid; gap: 6px }
+@media (prefers-reduced-motion: reduce) { button:active { transform: none } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Convertor Stereo 70</h1>
+    <p class="lead">Scrie în oricare câmp și celălalt se calculează imediat. Pune câte un punct pe linie. La Google Maps merg grade zecimale, grade-minute-secunde și linkuri lungi.</p>
+  </header>
+  <div class="pair">
+    <section class="field geo">
+      <div class="top"><h2><label for="geo">Locație Google Maps</label></h2><span class="chip" id="chip-geo"></span></div>
+      <div class="order" role="radiogroup" aria-label="Formatul locației Google Maps">
+        <label><input type="radio" name="fmt" id="fmt-dec" value="dec" checked>Grade zecimale</label>
+        <label><input type="radio" name="fmt" id="fmt-dms" value="dms">Grade-min-sec</label>
+      </div>
+      <textarea id="geo" rows="3" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="44.441300, 26.097300" aria-describedby="msg-geo"></textarea>
+      <p class="msg" id="msg-geo" aria-live="polite"></p>
+      <div class="acts"><button class="main" type="button" id="copy-geo">Copiază</button><button type="button" id="clear-geo">Golește</button></div>
+    </section>
+    <section class="field ste">
+      <div class="top"><h2><label for="ste">Stereo 70</label></h2><span class="chip" id="chip-ste"></span></div>
+      <div class="order" role="radiogroup" aria-label="Ordinea coordonatelor Stereo 70">
+        <label><input type="radio" name="order" id="order-ne" value="ne" checked>X nord, Y est</label>
+        <label><input type="radio" name="order" id="order-en" value="en">Est, nord</label>
+      </div>
+      <textarea id="ste" rows="3" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="327000.00, 587000.00" aria-describedby="msg-ste"></textarea>
+      <p class="msg" id="msg-ste" aria-live="polite"></p>
+      <div class="acts"><button class="main" type="button" id="copy-ste">Copiază</button><button type="button" id="clear-ste">Golește</button></div>
+    </section>
+  </div>
+  <section class="points" id="points" hidden><h2>Verifică pe hartă</h2><ul id="list"></ul></section>
+  <footer>
+    <p>Precizie de circa 3 m: transformare Helmert cu 7 parametri, WGS 84 (EPSG:4326) ↔ Pulkovo 1942(58) / Stereo 70 (EPSG:3844), fără grila ANCPI. Pentru lucrări cadastrale folosește TransDatRO.</p>
+    <p>Calculul se face pe dispozitivul tău. QGIS și AutoCAD cer de obicei estul primul.</p>
+  </footer>
+</main>
+<script>
+/*CORE*/
+var Core = (function () {
+  var D = Math.PI / 180, AS = D / 3600;
+  function ell(a, rf) { var f = 1 / rf; return { a: a, e2: f * (2 - f) } }
+  var WGS = ell(6378137, 298.257223563), KR = ell(6378245, 298.3);
+  // EPSG: Pulkovo 1942(58) to WGS 84 (19), coordinate frame
+  var T = [2.329, -147.042, -92.08], rx = 0.309 * AS, ry = -0.325 * AS, rz = -0.497 * AS, M = 1 + 5.69e-6;
+  var R = [[1, rz, -ry], [-rz, 1, rx], [ry, -rx, 1]];
+  function cart(E, p, l) { var s = Math.sin(p), v = E.a / Math.sqrt(1 - E.e2 * s * s);
+    return [v * Math.cos(p) * Math.cos(l), v * Math.cos(p) * Math.sin(l), v * (1 - E.e2) * s] }
+  function geod(E, c) { var r = Math.hypot(c[0], c[1]), p = Math.atan2(c[2], r * (1 - E.e2)), i, s, v;
+    for (i = 0; i < 10; i++) { s = Math.sin(p); v = E.a / Math.sqrt(1 - E.e2 * s * s); p = Math.atan2(c[2] + E.e2 * v * s, r) }
+    return [p, Math.atan2(c[1], c[0])] }
+  function toWgs(c) { return R.map(function (w, i) { return T[i] + M * (w[0] * c[0] + w[1] * c[1] + w[2] * c[2]) }) }
+  function toKr(c) { var d = [c[0] - T[0], c[1] - T[1], c[2] - T[2]];
+    return [0, 1, 2].map(function (j) { return (R[0][j] * d[0] + R[1][j] * d[1] + R[2][j] * d[2]) / M }) }
+  // Stereografică oblică (EPSG 9809)
+  var p0 = 46 * D, l0 = 25 * D, k0 = 0.99975, F0 = 500000, e2 = KR.e2, e = Math.sqrt(e2), s0 = Math.sin(p0);
+  var rho = KR.a * (1 - e2) / Math.pow(1 - e2 * s0 * s0, 1.5), nu = KR.a / Math.sqrt(1 - e2 * s0 * s0);
+  var K = 2 * Math.sqrt(rho * nu) * k0, n = Math.sqrt(1 + e2 * Math.pow(Math.cos(p0), 4) / (1 - e2));
+  function W(s) { return Math.pow((1 + s) / (1 - s) * Math.pow((1 - e * s) / (1 + e * s), e), n) }
+  var w1 = W(s0), x0 = (w1 - 1) / (w1 + 1), c = (n + s0) * (1 - x0) / ((n - s0) * (1 + x0));
+  var chi0 = Math.asin((c * w1 - 1) / (c * w1 + 1)), sc = Math.sin(chi0), cc = Math.cos(chi0);
+  function toStereo(lat, lon) {
+    var g = geod(KR, toKr(cart(WGS, lat * D, lon * D))), w = c * W(Math.sin(g[0])), x = Math.asin((w - 1) / (w + 1)), d = n * (g[1] - l0);
+    var B = 1 + Math.sin(x) * sc + Math.cos(x) * cc * Math.cos(d);
+    return [F0 + K * (Math.sin(x) * cc - Math.cos(x) * sc * Math.cos(d)) / B, F0 + K * Math.cos(x) * Math.sin(d) / B] }
+  function toGeo(N, E) {
+    var y = N - F0, x = E - F0, g = K * Math.tan(Math.PI / 4 - chi0 / 2), h = 2 * K * Math.tan(chi0) + g;
+    var i = Math.atan(x / (h + y)), j = Math.atan(x / (g - y)) - i;
+    var chi = chi0 + 2 * Math.atan((y - x * Math.tan(j / 2)) / K), lon = (j + 2 * i) / n + l0, s = Math.sin(chi);
+    var q = 0.5 * Math.log((1 + s) / (c * (1 - s))) / n, p = 2 * Math.atan(Math.exp(q)) - Math.PI / 2, t, sp, qi;
+    for (t = 0; t < 10; t++) { sp = Math.sin(p);
+      qi = Math.log(Math.tan(p / 2 + Math.PI / 4) * Math.pow((1 - e * sp) / (1 + e * sp), e / 2));
+      p -= (qi - q) * Math.cos(p) * (1 - e2 * sp * sp) / (1 - e2) }
+    var r = geod(WGS, toWgs(cart(KR, p, lon))); return [r[0] / D, r[1] / D] }
+
+  function num(t) { t = t.replace(/\s/g, '');
+    var d = (t.match(/\./g) || []).length, k = (t.match(/,/g) || []).length;
+    if (d && k) { t = t.lastIndexOf('.') > t.lastIndexOf(',') ? t.replace(/,/g, '') : t.replace(/\./g, '').replace(',', '.') }
+    else if (d > 1) t = t.replace(/\./g, ''); else if (k > 1) t = t.replace(/,/g, ''); else t = t.replace(',', '.');
+    return /^[+-]?\d+(\.\d+)?$/.test(t) ? parseFloat(t) : NaN }
+  function pair(s) {
+    s = s.replace(/[−–]/g, '-').replace(/[A-Za-zĂÂÎȘȚăâîșț=:()\[\]°]+/g, ' ').replace(/[  ]/g, ' ').trim();
+    var seps = [/[;|\t]/, /,\s+/, /\s+,/, /\s+/], i, p, v;
+    for (i = 0; i < seps.length; i++) { p = s.split(seps[i]).filter(function (q) { return q.trim() });
+      if (i === 3 && p.length === 4 && /^\d{3}([.,]\d+)?$/.test(p[1]) && /^\d{3}([.,]\d+)?$/.test(p[3])) p = [p[0] + p[1], p[2] + p[3]];
+      if (p.length === 2) { v = p.map(num); if (!isNaN(v[0]) && !isNaN(v[1])) return v } }
+    p = s.split(',');
+    if (p.length === 4) p = [p[0] + '.' + p[1], p[2] + '.' + p[3]];
+    if (p.length === 2) { v = p.map(num); if (!isNaN(v[0]) && !isNaN(v[1])) return v }
+    return null }
+  function inRo(a, o) { return a >= 43.4 && a <= 48.4 && o >= 20.1 && o <= 31.5 }
+  function dms(s) {
+    s = s.replace(/[−–]/g, '-').replace(/[  ]/g, ' ').replace(/[º˚]/g, '°').replace(/[‘’‛`´′ʹ]/g, "'").replace(/[“”„″ʺ]/g, '"').replace(/''/g, '"')
+      .replace(/\b(?:lat|lon|lng|long)(?:itudin[ea])?\b\.?\s*[:=]?/gi, ' ').replace(/\b(nord|sud|est|vest|north|south|east|west)\b/gi, function (w) { return w.charAt(0).toUpperCase() })
+      .replace(/[()\[\]]/g, ' ').trim();
+    if (/\d\s*d(?:eg)?\s*\d+(?:[.,]\d+)?\s*m/i.test(s)) s = s.replace(/(\d)\s*d(?:eg)?(?=\s*\d)/gi, '$1°').replace(/(\d)\s*m(?:in)?(?![a-z])/gi, "$1'").replace(/('\s*\d+(?:[.,]\d+)?)\s*s(?:ec)?(?![a-z])/gi, '$1"');
+    if (s.indexOf('°') < 0) {
+      s = s.replace(/(\d+)\s*([:-])\s*(\d+)\s*\2\s*(\d+(?:[.,]\d+)?)/g, '$1°$3\'$4"');
+      if (s.indexOf('°') < 0) {
+        var A = "([NSEWV]?)\\s*([+-]?\\d{1,3})\\s+(\\d{1,2}(?:[.,]\\d+)?)\\s*'?(?:\\s+(\\d{1,2}(?:[.,]\\d+)?)\\s*\"?)?\\s*([NSEWV]?)";
+        var q = s.match(new RegExp('^' + A + '(?:\\s*[,;|\\t]\\s*|\\s+)' + A + '$', 'i'));
+        if (!q || !q[4] !== !q[9]) return null;
+        var one = function (i) { return q[i] + q[i + 1] + '°' + q[i + 2] + "'" + (q[i + 3] ? q[i + 3] + '"' : '') + q[i + 4] };
+        s = one(1) + ' ' + one(6);
+      }
+    }
+    var num = '(\\d+(?:[.,]\\d+)?)', end = '(?!\\d|[.,]\\d|\\s*°)', pre = /^[NSEWV]/i.test(s), L = '([NSEWV])?';
+    var re = new RegExp((pre ? L + '\\s*' : '()') + '([+-]?\\d+(?:[.,]\\d+)?)\\s*°(?:\\s*' + num + end + "\\s*'?" + '(?:\\s*' + num + end + '\\s*"?)?)?' + (pre ? '()' : '\\s*' + L), 'gi');
+    var a = [], bad = false, sexa = false, rest = s.replace(re, function () { a.push(arguments); return '' });
+    if (a.length !== 2 || !/^[\s,;|\/]*$/.test(rest)) return { err: 'nu pot citi gradele. Exemplu: 44°26\'28.68"N 26°05\'50.28"E' };
+    var f = function (z) { return z ? parseFloat(z.replace(',', '.')) : 0 };
+    var r = a.map(function (g) { var M = f(g[3]), S = f(g[4]), x = Math.abs(f(g[2])) + M / 60 + S / 3600;
+      if (M >= 60 || S >= 60) bad = true; if (g[3]) sexa = true;
+      return (g[2].charAt(0) === '-' || /[SWV]/i.test(g[1] || g[5] || '')) ? -x : x });
+    if (bad) return { err: 'minutele și secundele trebuie să fie sub 60.' };
+    if (/[EWV]/i.test(a[0][1] || a[0][5] || '')) r.reverse();
+    return { v: r, fmt: sexa ? 'dms' : 'dec' } }
+  function sx(v, p, n) { var t = Math.round(Math.abs(v) * 3.6e6), z = function (x, k) { x = String(x); while (x.length < k) x = '0' + x; return x };
+    return z(Math.floor(t / 3.6e6), 2) + '°' + z(Math.floor(t / 6e4) % 60, 2) + "'" + z(((t % 6e4) / 1000).toFixed(3), 6) + '"' + (v < 0 ? n : p) }
+  function dc(v) { return v.toFixed(7).replace(/0$/, '') }
+  function formatGeo(lat, lon, fmt) { return fmt === 'dms' ? sx(lat, 'N', 'S') + ' ' + sx(lon, 'E', 'W') : dc(lat) + ', ' + dc(lon) }
+  function parseGeo(s) {
+    var m, v, fmt, raw = s;
+    if (/https?:|www\.|goo\.gl|google\./i.test(s)) {
+      try { s = decodeURIComponent(s) } catch (x) { s = raw }
+      m = s.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/) || s.match(/(?:[?&](?:q|query|ll|destination|center)=(?:loc:)?)(-?\d+\.\d+),[\s+]*(-?\d+\.\d+)/) ||
+          s.match(/\/(?:search|place|dir)\/(-?\d+\.\d+),[\s+]*(-?\d+\.\d+)/) || s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (!m) return { err: /goo\.gl/i.test(s) ? 'linkul scurt nu conține coordonate. Deschide-l, ține apăsat pe punct și copiază coordonatele.' : 'linkul nu conține coordonate.' };
+      v = [+m[1], +m[2]];
+    } else {
+      var d = dms(s);
+      if (d && d.err) return d;
+      if (d) { v = d.v; fmt = d.fmt } else { v = pair(s); fmt = 'dec' }
+    }
+    if (!v) return { err: 'nu găsesc două coordonate. Exemplu: 44.4413, 26.0973' };
+    if (Math.abs(v[0]) > 90 || Math.abs(v[1]) > 180) return { err: 'nu sunt grade valide. Sunt cumva coordonate Stereo 70?' };
+    if (!inRo(v[0], v[1])) return { err: inRo(v[1], v[0]) ? 'latitudinea și longitudinea par inversate.' : 'punctul este în afara României.' };
+    return { lat: v[0], lon: v[1], fmt: fmt } }
+  function parseSte(s, order) {
+    var v = pair(s), g; if (!v) return { err: 'nu găsesc două coordonate. Exemplu: 327000.00, 587000.00' };
+    if (order === 'en') v.reverse();
+    if (v[0] > 0 && v[0] < 1e6 && v[1] > 0 && v[1] < 1e6) {
+      g = toGeo(v[0], v[1]); if (inRo(g[0], g[1])) return { N: v[0], E: v[1] };
+      g = toGeo(v[1], v[0]); if (inRo(g[0], g[1])) return { err: 'nordul și estul par inversate. Schimbă ordinea de mai sus.' } }
+    return { err: 'punctul este în afara României.' } }
+  return { toStereo: toStereo, toGeo: toGeo, parseGeo: parseGeo, formatGeo: formatGeo, parseSte: parseSte };
+})();
+/*END*/
+(function () {
+  var $ = function (i) { return document.getElementById(i) }, el = { geo: $('geo'), ste: $('ste') }, KEY = 'stereo70';
+  var src = 'geo', example = false;
+  function order() { return $('order-en').checked ? 'en' : 'ne' }
+  function fmt() { return $('fmt-dms').checked ? 'dms' : 'dec' }
+  var exact = {}; // textul afișat -> coordonatele nerotunjite
+  function show(lat, lon) { var f = fmt(), t = Core.formatGeo(lat, lon, f); exact[t] = { lat: lat, lon: lon, fmt: f }; return t }
+  function readGeo(l) { l = l.trim(); return Object.prototype.hasOwnProperty.call(exact, l) ? exact[l] : Core.parseGeo(l) }
+  function size(t) { t.rows = Math.min(14, Math.max(3, t.value.split('\n').length)) }
+  function run() {
+    var other = src === 'geo' ? 'ste' : 'geo', errs = [], pts = [], lines = el[src].value.split(/\r?\n/);
+    var out = lines.map(function (l, i) {
+      if (!l.trim()) return '';
+      var r = src === 'geo' ? readGeo(l) : Core.parseSte(l, order()), v;
+      if (r.err) { errs.push(lines.length > 1 ? 'Linia ' + (i + 1) + ': ' + r.err : r.err.charAt(0).toUpperCase() + r.err.slice(1)); return '?' }
+      if (src === 'geo') { v = Core.toStereo(r.lat, r.lon); pts.push([r.lat, r.lon, i]); if (order() === 'en') v.reverse(); return v[0].toFixed(2) + ', ' + v[1].toFixed(2) }
+      v = Core.toGeo(r.N, r.E); pts.push([v[0], v[1], i]); return show(v[0], v[1]) });
+    el[other].value = out.join('\n');
+    $('msg-' + src).textContent = errs.slice(0, 4).join('\n') + (errs.length > 4 ? '\nAlte linii cu probleme: ' + (errs.length - 4) : '');
+    $('msg-' + other).textContent = '';
+    $('chip-' + src).textContent = example ? 'Exemplu' : 'Introdus'; $('chip-' + src).classList.add('in');
+    $('chip-' + other).textContent = 'Calculat'; $('chip-' + other).classList.remove('in');
+    size(el.geo); size(el.ste);
+    var ul = $('list'); ul.textContent = '';
+    pts.slice(0, 50).forEach(function (p) {
+      var li = document.createElement('li'), s = document.createElement('span'), a = document.createElement('a'), q = p[0].toFixed(7) + ',' + p[1].toFixed(7);
+      s.textContent = 'Linia ' + (p[2] + 1) + ': ' + Core.formatGeo(p[0], p[1], fmt());
+      a.textContent = 'Deschide în Google Maps'; a.href = 'https://www.google.com/maps/search/?api=1&query=' + q; a.target = '_blank'; a.rel = 'noopener';
+      li.append(s, a); ul.append(li) });
+    $('points').hidden = !pts.length;
+    if (!example) try { localStorage.setItem(KEY, JSON.stringify({ src: src, text: el[src].value, order: order(), fmt: fmt() })) } catch (x) {}
+  }
+  ['geo', 'ste'].forEach(function (k) {
+    el[k].addEventListener('input', function () {
+      src = k; example = false;
+      if (k === 'geo') el.geo.value.split(/\r?\n/).some(function (l) { var r = l.trim() && readGeo(l); if (r && r.fmt) { $('fmt-' + r.fmt).checked = true; return true } return false });
+      run() });
+    $('clear-' + k).addEventListener('click', function () { src = k; example = false; el[k].value = ''; run(); el[k].focus() });
+    $('copy-' + k).addEventListener('click', function () {
+      var b = this, done = function (t) { b.textContent = t; setTimeout(function () { b.textContent = 'Copiază' }, 1800) };
+      if (!el[k].value.trim()) return done('Câmpul e gol');
+      var fb = function () { el[k].focus(); el[k].select(); var ok = false; try { ok = document.execCommand('copy') } catch (x) {} done(ok ? 'Copiat' : 'Text selectat, copiază-l') };
+      try { navigator.clipboard.writeText(el[k].value).then(function () { done('Copiat') }, fb) } catch (x) { fb() } });
+  });
+  $('order-ne').addEventListener('change', run); $('order-en').addEventListener('change', run);
+  function refmt() {
+    if (src === 'geo') el.geo.value = el.geo.value.split(/\r?\n/).map(function (l) { var r = l.trim() ? readGeo(l) : null; return r && !r.err ? show(r.lat, r.lon) : l }).join('\n');
+    run() }
+  $('fmt-dec').addEventListener('change', refmt); $('fmt-dms').addEventListener('change', refmt);
+  var saved = null; try { saved = JSON.parse(localStorage.getItem(KEY)) } catch (x) {}
+  if (saved && saved.text && el[saved.src]) { src = saved.src; el[src].value = saved.text; $(saved.order === 'en' ? 'order-en' : 'order-ne').checked = true; $(saved.fmt === 'dms' ? 'fmt-dms' : 'fmt-dec').checked = true }
+  else { example = true; el.geo.value = '44.441300, 26.097300\n45.657500, 25.601000' }
+  run();
+})();
+</script>
+</body>
+</html>
